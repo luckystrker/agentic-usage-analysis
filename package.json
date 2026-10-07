@@ -1,0 +1,37 @@
+{
+  "name": "agentic-usage-analysis",
+  "version": "0.1.0",
+  "description": "Skill + toolkit that reconstructs how AI coding agents (Codex, Claude Code, ZCode, OpenCode, OMP, ...) worked on a repository, from their local session logs. Installs itself into your agent's skills directory.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luckystrker/agentic-usage-analysis.git"
+  },
+  "homepage": "https://github.com/luckystrker/agentic-usage-analysis#readme",
+  "bugs": {
+    "url": "https://github.com/luckystrker/agentic-usage-analysis/issues"
+  },
+  "bin": {
+    "agentic-usage-analysis": "bin/install.mjs"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "references/",
+    "evals/",
+    "SKILL.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "skill",
+    "agent",
+    "audit",
+    "session-logs",
+    "claude-code",
+    "zcode",
+    "codex",
+    "opencode"
+  ]
+}
