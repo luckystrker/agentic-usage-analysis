@@ -1,0 +1,49 @@
+{
+  "skill_name": "agentic-usage-analysis",
+  "note": "Portable evals: prompts use the fictional repo C:\\projects\\demo-repo (it never needs to exist on disk — extractors only read log stores). Point the extractors at the bundled fixtures via --root/--sessions-root as described in expected_output. Assertions are objective and runnable on any machine.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Выясни, как codex работал над C:\\projects\\demo-repo: сколько было сессий и реальных сообщений пользователя. Логи лежат в evals/fixtures/codex (это директория ~/.codex/sessions для теста).",
+      "expected_output": "Run: python scripts/extract_codex.py --repo \"C:\\projects\\demo-repo\" --root evals/fixtures/codex --out <TMP>, then compute_stats.py. Two rollout files share one session_id (a resumed thread) and one user message is guardian boilerplate (long, English, 'assess'/'conversation history' markers). Extraction must emit one line per rollout segment; stats must report the merged thread and real user messages only.",
+      "files": ["evals/fixtures/codex/2026/10/01/rollout-2026-10-01T10-00-00-seg1.jsonl", "evals/fixtures/codex/2026/10/01/rollout-2026-10-01T11-00-00-seg2.jsonl"],
+      "assertions": [
+        "codex_sessions.jsonl contains exactly 2 lines (one per rollout segment)",
+        "stats.json overview.codex.sessions equals 1 (resumed thread merged, segments=2)",
+        "stats.json overview.codex.user_msgs equals 3 (guardian synthetic message excluded at extraction)",
+        "all_user_messages.jsonl contains no line with synthetic:true"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Pull the Claude Code sessions for C:\\projects\\demo-repo from evals/fixtures/claude (pretend it is ~/.claude/projects). One of the two jsonl files belongs to a different repo.",
+      "expected_output": "Run: python scripts/extract_claude.py --repo \"C:\\projects\\demo-repo\" --root evals/fixtures/claude --out <TMP>. Matching is per-file on the session's own cwd records (files begin with a cwd:null summary line — the matcher must scan past it). The foreign-repo file must be excluded; the matching session must carry accumulated token usage from assistant usage records.",
+      "files": ["evals/fixtures/claude/C--projects-demo-repo/aaa-match.jsonl", "evals/fixtures/claude/C--projects-demo-repo/bbb-foreign.jsonl"],
+      "assertions": [
+        "claude_sessions.jsonl contains exactly 1 session (foreign-repo file excluded)",
+        "the extracted session has n_user_msgs == 1 (no synthetic/user text lost)",
+        "the extracted session tokens.input is 1500 and tokens.output is 300 (usage accumulated)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Unknown tool 'weird' stores sessions at evals/fixtures/generic — best-effort extract everything about demo-repo from there without crashing.",
+      "expected_output": "Run: python scripts/extract_generic_jsonl.py --repo \"C:\\projects\\demo-repo\" --tool weird --root evals/fixtures/generic --out <TMP>. The first record has message as a JSON list (malformed for our schema) and must be skipped, not fatal; the two well-formed records yield one session.",
+      "files": ["evals/fixtures/generic/weird.jsonl"],
+      "assertions": [
+        "the script exits with code 0 (malformed record skipped, not crashed)",
+        "weird_sessions.jsonl contains exactly 1 session with 1 user message"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Проверь C:\\projects\\definitely-no-logs — есть ли там вообще какие-то сессии агентов?",
+      "expected_output": "Run discover.py and the extractors against a repo with no sessions anywhere: every step must finish gracefully (no tracebacks), report zero sessions, and stats must state that no *_sessions.jsonl data exists rather than producing an empty report.",
+      "files": [],
+      "assertions": [
+        "no script raises a traceback on the empty case (missing DBs produce friendly SystemExit hints)",
+        "the final answer clearly states that no agent sessions were found"
+      ]
+    }
+  ]
+}
